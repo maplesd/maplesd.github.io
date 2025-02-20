@@ -88,8 +88,14 @@
         function splitAsteroid(asteroid) {
             const newSize = asteroid.radius / 2;
             if (newSize > 10) { // Minimum size threshold
-                asteroids.push(createAsteroid(asteroid.x, asteroid.y, newSize));
-                asteroids.push(createAsteroid(asteroid.x, asteroid.y, newSize));
+                const fragment1 = createAsteroid(asteroid.x, asteroid.y, newSize);
+                const fragment2 = createAsteroid(asteroid.x, asteroid.y, newSize);
+                // Give fragments slightly diverging velocities
+                fragment1.dx += Math.cos(asteroid.angle) * 1;
+                fragment1.dy += Math.sin(asteroid.angle) * 1;
+                fragment2.dx -= Math.cos(asteroid.angle) * 1;
+                fragment2.dy -= Math.sin(asteroid.angle) * 1;
+                asteroids.push(fragment1, fragment2);
             }
         }
 
@@ -147,7 +153,9 @@
             });
 
             // Collision detection
-            asteroids = asteroids.filter(asteroid => {
+            for (let i = asteroids.length - 1; i >= 0; i--) {
+                const asteroid = asteroids[i];
+                
                 // Ship collision
                 const distShip = Math.hypot(ship.x - asteroid.x, ship.y - asteroid.y);
                 if (distShip < ship.radius + asteroid.radius) {
@@ -157,17 +165,17 @@
                 }
 
                 // Bullet collision
-                for (let i = bullets.length - 1; i >= 0; i--) {
-                    const bullet = bullets[i];
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    const bullet = bullets[j];
                     const distBullet = Math.hypot(bullet.x - asteroid.x, bullet.y - asteroid.y);
                     if (distBullet < asteroid.radius) {
-                        bullets.splice(i, 1);
-                        splitAsteroid(asteroid);
-                        return false; // Destroy original asteroid
+                        bullets.splice(j, 1); // Remove bullet
+                        asteroids.splice(i, 1); // Remove asteroid
+                        splitAsteroid(asteroid); // Split into fragments
+                        break; // Exit bullet loop after hit
                     }
                 }
-                return true;
-            });
+            }
 
             draw();
             requestAnimationFrame(update);
