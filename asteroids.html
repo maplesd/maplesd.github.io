@@ -22,12 +22,34 @@
             color: white;
             font-family: Arial, sans-serif;
         }
+        #controls-link {
+            cursor: pointer;
+            text-decoration: underline;
+            margin-top: 10px;
+            display: block;
+        }
+        #controls-div {
+            display: none; /* Hidden by default */
+            border: 1px solid white;
+            padding: 10px;
+            background: #222;
+            margin-top: 5px;
+            width: 200px;
+        }
     </style>
 </head>
 <body>
     <div id="ui">
         <div>Score: <span id="score">0</span></div>
         <div>Lives: <span id="lives">5</span></div>
+        <a id="controls-link">Controls</a>
+        <div id="controls-div">
+            <h3>Controls</h3>
+            <p>Left Arrow: Rotate Left</p>
+            <p>Right Arrow: Rotate Right</p>
+            <p>Up Arrow: Thrust Forward</p>
+            <p>Spacebar: Shoot</p>
+        </div>
     </div>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
@@ -36,6 +58,13 @@
         const ctx = canvas.getContext('2d');
         const scoreDisplay = document.getElementById('score');
         const livesDisplay = document.getElementById('lives');
+        const controlsLink = document.getElementById('controls-link');
+        const controlsDiv = document.getElementById('controls-div');
+
+        // Toggle controls visibility
+        controlsLink.addEventListener('click', () => {
+            controlsDiv.style.display = controlsDiv.style.display === 'none' ? 'block' : 'none';
+        });
 
         // Ship object
         const ship = {
@@ -52,7 +81,7 @@
         // Game state
         let asteroids = [];
         let bullets = [];
-        let particles = []; // For explosion effects
+        let particles = [];
         let score = 0;
         let lives = 5;
 
@@ -93,7 +122,7 @@
                 dy: Math.random() * 2 - 1,
                 radius: radius,
                 angle: Math.random() * Math.PI * 2,
-                value: Math.floor(radius * 2) // Score value based on size
+                value: Math.floor(radius * 2)
             };
         }
 
@@ -122,10 +151,10 @@
         function splitAsteroid(asteroid) {
             score += asteroid.value;
             scoreDisplay.textContent = score;
-            createExplosion(asteroid.x, asteroid.y); // Explosion effect
+            createExplosion(asteroid.x, asteroid.y);
 
             const newSize = asteroid.radius / 2;
-            if (newSize > 10) { // Minimum size threshold
+            if (newSize > 10) {
                 const fragment1 = createAsteroid(asteroid.x, asteroid.y, newSize);
                 const fragment2 = createAsteroid(asteroid.x, asteroid.y, newSize);
                 fragment1.dx += Math.cos(asteroid.angle) * 1;
@@ -134,7 +163,6 @@
                 fragment2.dy -= Math.sin(asteroid.angle) * 1;
                 return [fragment1, fragment2];
             }
-            // Extra life every 1000 points
             if (score >= (lives - 4) * 1000) {
                 lives++;
                 livesDisplay.textContent = lives;
@@ -144,7 +172,6 @@
 
         // Main game loop
         function update() {
-            // Handle ship controls
             if (keys.left) ship.rotation -= 0.05;
             if (keys.right) ship.rotation += 0.05;
             if (keys.up) {
@@ -159,23 +186,19 @@
                 keys.space = false;
             }
 
-            // Update ship position
             ship.angle += ship.rotation;
             ship.x += ship.dx;
             ship.y += ship.dy;
 
-            // Friction
             ship.dx *= 0.99;
             ship.dy *= 0.99;
             ship.rotation *= 0.95;
 
-            // Screen wrap for ship
             if (ship.x > canvas.width) ship.x = 0;
             if (ship.x < 0) ship.x = canvas.width;
             if (ship.y > canvas.height) ship.y = 0;
             if (ship.y < 0) ship.y = canvas.height;
 
-            // Update asteroids
             asteroids.forEach(asteroid => {
                 asteroid.x += asteroid.dx;
                 asteroid.y += asteroid.dy;
@@ -185,7 +208,6 @@
                 if (asteroid.y < -asteroid.radius) asteroid.y = canvas.height + asteroid.radius;
             });
 
-            // Update bullets
             bullets = bullets.filter(b => b.life > 0);
             bullets.forEach(bullet => {
                 bullet.x += bullet.dx;
@@ -193,7 +215,6 @@
                 bullet.life--;
             });
 
-            // Update particles
             particles = particles.filter(p => p.life > 0);
             particles.forEach(p => {
                 p.x += p.dx;
@@ -201,11 +222,8 @@
                 p.life--;
             });
 
-            // Collision detection
             for (let i = asteroids.length - 1; i >= 0; i--) {
                 const asteroid = asteroids[i];
-
-                // Ship collision
                 const distShip = Math.hypot(ship.x - asteroid.x, ship.y - asteroid.y);
                 if (distShip < ship.radius + asteroid.radius && lives > 0) {
                     lives--;
@@ -213,14 +231,13 @@
                     ship.x = canvas.width / 2;
                     ship.y = canvas.height / 2;
                     ship.dx = ship.dy = 0;
-                    createExplosion(ship.x, ship.y, 15); // Ship hit effect
+                    createExplosion(ship.x, ship.y, 15);
                     if (lives <= 0) {
                         alert(`Game Over! Final Score: ${score}`);
                         resetGame();
                     }
                 }
 
-                // Bullet collision
                 for (let j = bullets.length - 1; j >= 0; j--) {
                     const bullet = bullets[j];
                     const distBullet = Math.hypot(bullet.x - asteroid.x, bullet.y - asteroid.y);
@@ -261,6 +278,7 @@
             ship.dx = ship.dy = 0;
             scoreDisplay.textContent = score;
             livesDisplay.textContent = lives;
+            controlsDiv.style.display = 'none'; // Hide controls on reset
             spawnInitialAsteroids();
         }
 
@@ -268,7 +286,6 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw ship
             ctx.save();
             ctx.translate(ship.x, ship.y);
             ctx.rotate(ship.angle);
@@ -281,7 +298,6 @@
             ctx.stroke();
             ctx.restore();
 
-            // Draw asteroids
             asteroids.forEach(asteroid => {
                 ctx.beginPath();
                 ctx.arc(asteroid.x, asteroid.y, asteroid.radius, 0, Math.PI * 2);
@@ -289,7 +305,6 @@
                 ctx.stroke();
             });
 
-            // Draw bullets
             bullets.forEach(bullet => {
                 ctx.beginPath();
                 ctx.arc(bullet.x, bullet.y, 2, 0, Math.PI * 2);
@@ -297,11 +312,10 @@
                 ctx.fill();
             });
 
-            // Draw explosion particles
             particles.forEach(p => {
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(255, 255, 255, ${p.life / 30})`; // Fade out effect
+                ctx.fillStyle = `rgba(255, 255, 255, ${p.life / 30})`;
                 ctx.fill();
             });
         }
