@@ -69,19 +69,22 @@
 
         // Create asteroid
         function createAsteroid(x, y, size) {
+            const radius = size || Math.random() * 30 + 20;
             return {
-                x: x !== undefined ? x : (Math.random() > 0.5 ? 0 - size : canvas.width + size),
+                x: x !== undefined ? x : (Math.random() > 0.5 ? -radius : canvas.width + radius),
                 y: y !== undefined ? y : Math.random() * canvas.height,
                 dx: Math.random() * 2 - 1,
                 dy: Math.random() * 2 - 1,
-                radius: size || Math.random() * 30 + 20,
+                radius: radius,
                 angle: Math.random() * Math.PI * 2
             };
         }
 
-        // Initial asteroids
-        for (let i = 0; i < 5; i++) {
-            asteroids.push(createAsteroid());
+        // Initialize asteroids
+        function spawnInitialAsteroids() {
+            for (let i = 0; i < 5; i++) {
+                asteroids.push(createAsteroid());
+            }
         }
 
         // Split asteroid into smaller pieces
@@ -90,13 +93,14 @@
             if (newSize > 10) { // Minimum size threshold
                 const fragment1 = createAsteroid(asteroid.x, asteroid.y, newSize);
                 const fragment2 = createAsteroid(asteroid.x, asteroid.y, newSize);
-                // Give fragments slightly diverging velocities
+                // Give fragments diverging velocities
                 fragment1.dx += Math.cos(asteroid.angle) * 1;
                 fragment1.dy += Math.sin(asteroid.angle) * 1;
                 fragment2.dx -= Math.cos(asteroid.angle) * 1;
                 fragment2.dy -= Math.sin(asteroid.angle) * 1;
-                asteroids.push(fragment1, fragment2);
+                return [fragment1, fragment2];
             }
+            return []; // Return empty array if too small to split
         }
 
         // Main game loop
@@ -155,7 +159,7 @@
             // Collision detection
             for (let i = asteroids.length - 1; i >= 0; i--) {
                 const asteroid = asteroids[i];
-                
+
                 // Ship collision
                 const distShip = Math.hypot(ship.x - asteroid.x, ship.y - asteroid.y);
                 if (distShip < ship.radius + asteroid.radius) {
@@ -171,7 +175,8 @@
                     if (distBullet < asteroid.radius) {
                         bullets.splice(j, 1); // Remove bullet
                         asteroids.splice(i, 1); // Remove asteroid
-                        splitAsteroid(asteroid); // Split into fragments
+                        const fragments = splitAsteroid(asteroid); // Get fragments
+                        asteroids.push(...fragments); // Add fragments to array
                         break; // Exit bullet loop after hit
                     }
                 }
@@ -227,7 +232,8 @@
         }
 
         // Start game
-        update();
+        spawnInitialAsteroids(); // Initialize asteroids
+        update(); // Start game loop
     </script>
 </body>
 </html>
